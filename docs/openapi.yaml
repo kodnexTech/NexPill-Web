@@ -1,0 +1,342 @@
+openapi: 3.1.0
+info:
+  title: NexPill API
+  version: 1.0.0
+  description: Versioned mobile API. All protected routes require a Laravel Sanctum bearer token.
+servers:
+  - url: https://api.example.com/api/v1
+  - url: http://127.0.0.1:8000/api/v1
+tags:
+  - { name: Auth }
+  - { name: Medicines }
+  - { name: Doses }
+  - { name: Family }
+  - { name: Appointments }
+  - { name: Account }
+paths:
+  /health:
+    get:
+      operationId: health
+      responses:
+        '200': { description: Service is available }
+  /auth/register:
+    post:
+      tags: [Auth]
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /auth/otp/request:
+    post:
+      tags: [Auth]
+      operationId: requestOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, purpose]
+              properties:
+                email: { type: string, format: email }
+                purpose: { type: string, enum: [login, register] }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /auth/otp/verify:
+    post:
+      tags: [Auth]
+      operationId: verifyOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code, purpose, device_name]
+              properties:
+                email: { type: string, format: email }
+                code: { type: string, pattern: '^[0-9]{6}$' }
+                purpose: { type: string, enum: [login, register] }
+                device_name: { type: string }
+                name: { type: string }
+                timezone: { type: string, example: Asia/Kolkata }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /dashboard:
+    get:
+      security: [{ sanctum: [] }]
+      operationId: dashboard
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /medicines:
+    get:
+      tags: [Medicines]
+      security: [{ sanctum: [] }]
+      operationId: listMedicines
+      parameters:
+        - { name: search, in: query, schema: { type: string } }
+        - { name: dependent_id, in: query, schema: { type: string, format: uuid } }
+        - { name: active_only, in: query, schema: { type: boolean } }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    post:
+      tags: [Medicines]
+      security: [{ sanctum: [] }]
+      operationId: createMedicine
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MedicineRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /medicines/{medicine}:
+    parameters:
+      - { $ref: '#/components/parameters/MedicineId' }
+    get:
+      tags: [Medicines]
+      security: [{ sanctum: [] }]
+      responses: { '200': { $ref: '#/components/responses/Success' }, '404': { description: Not found or not owned } }
+    put:
+      tags: [Medicines]
+      security: [{ sanctum: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MedicineRequest' }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+    delete:
+      tags: [Medicines]
+      security: [{ sanctum: [] }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /medicines/{medicine}/refills:
+    post:
+      tags: [Medicines]
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/MedicineId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quantity]
+              properties:
+                quantity: { type: integer, minimum: 1 }
+                cost: { type: number, minimum: 0 }
+                pharmacy: { type: string }
+                notes: { type: string }
+      responses: { '201': { $ref: '#/components/responses/Success' } }
+  /medicines/{medicine}/prescription:
+    post:
+      tags: [Medicines]
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/MedicineId' }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [prescription]
+              properties:
+                prescription: { type: string, format: binary, description: JPG/PNG/WebP/PDF, max 10 MB }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+    get:
+      tags: [Medicines]
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/MedicineId' }]
+      responses: { '200': { description: Private prescription file }, '404': { description: Not found or not owned } }
+  /doses:
+    get:
+      tags: [Doses]
+      security: [{ sanctum: [] }]
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: status, in: query, schema: { type: string, enum: [scheduled, taken, skipped, snoozed, missed] } }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /doses/{dose}/actions:
+    post:
+      tags: [Doses]
+      security: [{ sanctum: [] }]
+      parameters:
+        - { name: dose, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DoseActionRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '409': { description: Dose already finalized }
+  /family:
+    get:
+      tags: [Family]
+      security: [{ sanctum: [] }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /family/invitations:
+    post:
+      tags: [Family]
+      security: [{ sanctum: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, role]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                role: { type: string, enum: [caregiver, viewer] }
+      responses: { '201': { $ref: '#/components/responses/Success' } }
+  /family/invitations/accept:
+    post:
+      tags: [Family]
+      security: [{ sanctum: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties: { code: { type: string, minLength: 6, maxLength: 6 } }
+      responses: { '200': { $ref: '#/components/responses/Success' }, '403': { description: Invitation belongs to another email } }
+  /appointments:
+    get:
+      tags: [Appointments]
+      security: [{ sanctum: [] }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+    post:
+      tags: [Appointments]
+      security: [{ sanctum: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, appointment_at]
+              properties:
+                title: { type: string }
+                appointment_at: { type: string, format: date-time }
+                doctor_name: { type: string }
+                location: { type: string }
+                notes: { type: string }
+      responses: { '201': { $ref: '#/components/responses/Success' } }
+  /notifications:
+    get:
+      security: [{ sanctum: [] }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /profile:
+    get:
+      tags: [Account]
+      security: [{ sanctum: [] }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+    put:
+      tags: [Account]
+      security: [{ sanctum: [] }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+    delete:
+      tags: [Account]
+      security: [{ sanctum: [] }]
+      responses: { '200': { description: Account anonymized and soft deleted } }
+components:
+  securitySchemes:
+    sanctum:
+      type: http
+      scheme: bearer
+      bearerFormat: Sanctum
+  parameters:
+    MedicineId:
+      name: medicine
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    Success:
+      description: Successful NexPill response
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Envelope' }
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Envelope' }
+  schemas:
+    Envelope:
+      type: object
+      required: [success, message]
+      properties:
+        success: { type: boolean }
+        message: { type: string }
+        data: {}
+        errors: {}
+    LoginRequest:
+      type: object
+      required: [email, password, device_name]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+        device_name: { type: string }
+    RegisterRequest:
+      allOf:
+        - { $ref: '#/components/schemas/LoginRequest' }
+        - type: object
+          required: [name, password_confirmation]
+          properties:
+            name: { type: string }
+            password_confirmation: { type: string }
+            timezone: { type: string, example: Asia/Kolkata }
+    MedicineRequest:
+      type: object
+      required: [name, form, schedule]
+      properties:
+        name: { type: string }
+        form: { type: string, enum: [tablet, capsule, liquid, injection, drops, inhaler, cream, other] }
+        strength: { type: number, exclusiveMinimum: 0 }
+        unit: { type: string, example: mg }
+        instructions: { type: string }
+        inventory_total: { type: integer, minimum: 0 }
+        refill_threshold: { type: integer, minimum: 0 }
+        schedule:
+          type: object
+          required: [type, timezone, starts_on]
+          properties:
+            type: { type: string, enum: [daily, specific_days, interval, as_needed] }
+            timezone: { type: string }
+            times: { type: array, items: { type: string, pattern: '^[0-2][0-9]:[0-5][0-9]$' } }
+            weekdays: { type: array, items: { type: integer, minimum: 1, maximum: 7 } }
+            interval_days: { type: integer, minimum: 1 }
+            starts_on: { type: string, format: date }
+            ends_on: { type: string, format: date }
+    DoseActionRequest:
+      type: object
+      required: [action, client_request_id]
+      properties:
+        action: { type: string, enum: [taken, skipped, snoozed] }
+        client_request_id: { type: string, format: uuid, description: Makes retries idempotent }
+        snooze_minutes: { type: integer, minimum: 5, maximum: 240 }
+        symptoms: { type: array, items: { type: string } }
+        severity: { type: string, enum: [mild, moderate, severe] }

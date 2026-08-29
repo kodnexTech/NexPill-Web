@@ -1,0 +1,17 @@
+@extends('layouts.marketing')
+@section('title', 'Terms of Service — NexPill')
+@section('description', 'Terms governing use of the NexPill medication reminder and family-care service.')
+@section('content')
+<section class="legal-hero"><div class="shell narrow"><div class="eyebrow"><span></span>Terms of service</div><h1>Clear expectations for safer use.</h1><p>Effective 29 August 2026 · Version 1.0</p></div></section>
+<section class="legal-body"><div class="shell legal-grid"><aside><a href="#service">The service</a><a href="#medical">Medical disclaimer</a><a href="#account">Your account</a><a href="#family">Family access</a><a href="#billing">Billing</a><a href="#liability">Liability</a><a href="#contact">Contact</a></aside><article class="prose">
+<h2 id="service">Agreement and service</h2><p>By creating an account or using NexPill, you agree to these terms. NexPill provides tools for medication schedules, reminders, dose logs, refills, appointments, reports and family collaboration. Features may evolve, and availability can vary by device or region.</p>
+<h2 id="medical">Not medical advice or an emergency service</h2><div class="legal-callout danger"><strong>Never rely on NexPill for an emergency.</strong> Contact local emergency services or a qualified clinician. Do not start, stop, skip or change medicine based only on the app. Reminder delivery can be delayed by device settings, connectivity or third-party services.</div>
+<h2 id="account">Account responsibilities</h2><p>Provide accurate information, protect access to your account and device, and notify us of suspected misuse. You must be legally able to agree to these terms. You are responsible for checking schedules, medicine labels and clinical instructions.</p>
+<h2 id="family">Family and caregiver access</h2><p>Invite only people you trust. Roles control what another person may see or do, but you remain responsible for reviewing access. For managed dependents, you confirm you are authorized to manage their information.</p>
+<h2>Acceptable use</h2><ul><li>Do not access another person’s account without permission.</li><li>Do not upload unlawful, malicious or infringing content.</li><li>Do not disrupt, reverse engineer or abuse the service or APIs.</li><li>Do not use NexPill to provide unlicensed medical advice.</li></ul>
+<h2 id="billing">Subscriptions and billing</h2><p>Paid plans, if offered, will show price, currency, billing period, renewal and cancellation terms before purchase. App-store or payment-provider rules may also apply. Billing is not active until a payment provider and refund policy are configured.</p>
+<h2>Availability and termination</h2><p>We may suspend access to protect users or the service, respond to law, or address serious violations. You may delete your account through the app. We may discontinue features with reasonable notice where practical.</p>
+<h2 id="liability">Disclaimers and liability</h2><p>The service is provided on an “as available” basis to the extent permitted by law. NexPill does not guarantee that every reminder will arrive or that user-entered information is correct. Liability limits and governing law must be finalized by counsel for the operating entity and launch jurisdictions before production.</p>
+<h2 id="contact">Contact</h2><p>Questions: <a href="mailto:support@nexpill.app">support@nexpill.app</a>. These draft terms require legal review and operator/jurisdiction details before public launch.</p>
+</article></div></section>
+@endsection

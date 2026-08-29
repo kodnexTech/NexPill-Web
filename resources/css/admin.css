@@ -1,0 +1,43 @@
+@import 'tailwindcss';
+
+/* Admin panel sources */
+@source '../views/admin/**/*.blade.php';
+@source '../../app/Http/Controllers/Admin/**/*.php';
+
+@theme {
+    /* NexPill Brand Palette */
+    --color-forest:      #063f3a;
+    --color-forest-dark: #042e2a;
+    --color-leaf:        #0f806f;
+    --color-leaf-light:  #13a08d;
+    --color-mint:        #a8ded1;
+    --color-mint-light:  #e4f5f1;
+    --color-mist:        #f4f8f5;
+    --color-cream:       #fffaf1;
+    --color-coral:       #f57863;
+    --color-coral-light: #ffeae5;
+    --color-coral-dark:  #e05a46;
+    --color-ink:         #102a2a;
+    --color-slate:       #60716e;
+    --color-border:      #dde8e5;
+    --color-surface:     #ffffff;
+    --color-bg:          #f6faf8;
+
+    /* Admin-specific */
+    --color-sidebar-bg:  #062f2c;
+    --color-sidebar-hover: rgba(255,255,255,0.07);
+    --color-sidebar-active: rgba(15,128,111,0.25);
+
+    --font-sans: 'Inter', 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
+
+    --radius-card: 0.875rem;
+    --radius-badge: 9999px;
+}
+
+/* ─── Base ─────────────────────────────────────────────────────────────────── */
+:root { color-scheme: light; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--color-bg); color: var(--color-ink); font-family: var(--font-sans); }
+*, *::before, *::after { box-sizing: border-box; }
+a { text-decoration: none; color: inherit; }
+::selection { background: var(--color-leaf); color: white; }
