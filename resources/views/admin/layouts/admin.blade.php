@@ -6,11 +6,12 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin') — NexPill Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
     @vite(['resources/css/admin.css'])
     @stack('head')
 </head>
-<body class="h-full bg-[#f6faf8] font-[Inter,ui-sans-serif] antialiased">
+<body class="h-full bg-[#f6faf8] font-[Poppins,sans-serif] antialiased">
 
 {{-- Mobile overlay --}}
 <div id="sidebar-overlay" class="fixed inset-0 z-20 bg-black/50 hidden lg:hidden" onclick="closeSidebar()"></div>

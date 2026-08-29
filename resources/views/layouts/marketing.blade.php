@@ -6,9 +6,12 @@
     <meta name="description" content="@yield('description', 'NexPill helps people and families manage medicines, reminders, refills, appointments, and adherence in one calm place.')">
     <meta name="theme-color" content="#063f3a">
     <title>@yield('title', 'NexPill — Medication care, kept human')</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-mist text-ink antialiased">
+<body class="bg-mist text-ink antialiased font-[Poppins,sans-serif]">
 <header class="site-header">
     <nav class="shell flex h-20 items-center justify-between" aria-label="Main navigation">
         <a href="{{ route('home') }}" class="brand" aria-label="NexPill home">

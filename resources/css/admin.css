@@ -28,7 +28,7 @@
     --color-sidebar-hover: rgba(255,255,255,0.07);
     --color-sidebar-active: rgba(15,128,111,0.25);
 
-    --font-sans: 'Inter', 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
+    --font-sans: 'Poppins', 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
 
     --radius-card: 0.875rem;
     --radius-badge: 9999px;
