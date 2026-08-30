@@ -23,7 +23,7 @@ class AdminAuthController extends Controller
     public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
-            'email'    => ['required', 'email'],
+            'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
@@ -31,8 +31,9 @@ class AdminAuthController extends Controller
             return back()->withErrors(['email' => 'Invalid email or password.'])->withInput($request->only('email'));
         }
 
-        if (Auth::user()->role !== UserRole::Admin) {
+        if (! Auth::user()->is_active || Auth::user()->role !== UserRole::Admin) {
             Auth::logout();
+
             return back()->withErrors(['email' => 'You do not have admin access.'])->withInput($request->only('email'));
         }
 

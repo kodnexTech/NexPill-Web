@@ -15,7 +15,7 @@ class AdminAuditController extends Controller
         $query = AuditLog::with('actor')->latest();
 
         if ($request->filled('action')) {
-            $query->where('action', 'like', '%' . $request->action . '%');
+            $query->where('action', 'like', '%'.$request->action.'%');
         }
 
         if ($request->filled('actor_id')) {
@@ -30,7 +30,7 @@ class AdminAuditController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $logs  = $query->paginate(30)->withQueryString();
+        $logs = $query->paginate(30)->withQueryString();
         $admins = User::whereIn('role', ['admin', 'support'])->get();
 
         return view('admin.audit-logs.index', compact('logs', 'admins'));

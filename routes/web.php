@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminAuditController;
+use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminDoseLogsController;
 use App\Http\Controllers\Admin\AdminLegalController;
@@ -17,6 +17,7 @@ use App\Models\SupportTicket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+Route::redirect('/login', '/admin/login')->name('login');
 Route::view('/', 'home')->name('home');
 Route::view('/privacy', 'privacy')->name('privacy');
 Route::view('/terms', 'terms')->name('terms');
@@ -43,7 +44,7 @@ Route::get('/legal/{type}', function (string $type) {
 // ─── Admin Panel ──────────────────────────────────────────────────────────────
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AdminAuthController::class, 'login'])->name('login.post');
+    Route::post('/login', [AdminAuthController::class, 'login'])->middleware('throttle:5,1')->name('login.post');
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 
     Route::middleware(['auth', AdminMiddleware::class])->group(function () {
@@ -66,11 +67,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('support/{id}/status', [AdminSupportController::class, 'updateStatus'])->name('support.status');
 
         Route::resource('plans', AdminPlansController::class)->names([
-            'index'   => 'plans.index',
-            'create'  => 'plans.create',
-            'store'   => 'plans.store',
-            'edit'    => 'plans.edit',
-            'update'  => 'plans.update',
+            'index' => 'plans.index',
+            'create' => 'plans.create',
+            'store' => 'plans.store',
+            'edit' => 'plans.edit',
+            'update' => 'plans.update',
             'destroy' => 'plans.destroy',
         ]);
 

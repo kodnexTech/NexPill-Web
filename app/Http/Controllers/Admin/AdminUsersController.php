@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Models\SupportTicket;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,8 +20,8 @@ class AdminUsersController extends Controller
 
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('email', 'like', '%' . $request->search . '%');
+                $q->where('name', 'like', '%'.$request->search.'%')
+                    ->orWhere('email', 'like', '%'.$request->search.'%');
             });
         }
 
@@ -46,9 +47,9 @@ class AdminUsersController extends Controller
     public function show(string $id): View
     {
         $user = User::withTrashed()->findOrFail($id);
-        $medicines  = $user->medicines()->withCount('doseLogs')->latest()->limit(10)->get();
-        $doseLogs   = $user->doseLogs()->with('medicine')->latest()->limit(15)->get();
-        $tickets    = \App\Models\SupportTicket::where('email', $user->email)->latest()->limit(5)->get();
+        $medicines = $user->medicines()->withCount('doseLogs')->latest()->limit(10)->get();
+        $doseLogs = $user->doseLogs()->with('medicine')->latest()->limit(15)->get();
+        $tickets = SupportTicket::where('email', $user->email)->latest()->limit(5)->get();
         $subscriptions = $user->subscriptions()->with('plan')->latest()->get();
 
         return view('admin.users.show', compact('user', 'medicines', 'doseLogs', 'tickets', 'subscriptions'));
@@ -59,9 +60,18 @@ class AdminUsersController extends Controller
         $user = User::withTrashed()->findOrFail($id);
 
         $validated = $request->validate([
-            'role'      => ['sometimes', 'in:user,support,admin'],
+            'role' => ['sometimes', 'in:user,support,admin'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
+
+        $selfLockout = $request->user()?->is($user) && (
+            ($request->has('role') && $request->string('role')->toString() !== UserRole::Admin->value)
+            || ($request->has('is_active') && ! $request->boolean('is_active'))
+            || $request->has('soft_delete')
+        );
+        if ($selfLockout) {
+            return back()->with('error', 'You cannot remove your own admin access or deactivate your current account.');
+        }
 
         if ($request->has('role')) {
             $user->role = UserRole::from($request->role);
@@ -80,6 +90,10 @@ class AdminUsersController extends Controller
         }
 
         $user->save();
+        if (! $user->is_active || $user->trashed()) {
+            $user->tokens()->delete();
+            $user->deviceTokens()->delete();
+        }
 
         return back()->with('success', 'User updated successfully.');
     }

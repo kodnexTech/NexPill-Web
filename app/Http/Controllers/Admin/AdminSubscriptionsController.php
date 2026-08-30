@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Plan;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -23,14 +24,14 @@ class AdminSubscriptionsController extends Controller
 
         if ($request->filled('search')) {
             $query->whereHas('user', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('email', 'like', '%' . $request->search . '%');
+                $q->where('name', 'like', '%'.$request->search.'%')
+                    ->orWhere('email', 'like', '%'.$request->search.'%');
             });
         }
 
         $subscriptions = $query->paginate(20)->withQueryString();
 
-        $plans  = \App\Models\Plan::all();
+        $plans = Plan::all();
         $revenue = Subscription::where('status', 'active')
             ->join('plans', 'subscriptions.plan_id', '=', 'plans.id')
             ->sum('plans.price_minor');

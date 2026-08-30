@@ -1,6 +1,6 @@
 # NexPill Laravel platform
 
-Laravel 13 backend/API, Sanctum mobile tokens, Filament 5 admin and Tailwind CSS 4 marketing/legal website.
+Laravel 13 backend/API, Sanctum mobile tokens, custom Blade/Tailwind admin and Tailwind CSS 4 marketing/legal website.
 
 ## Local setup
 
@@ -18,7 +18,7 @@ php artisan serve
 
 Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` before `php artisan db:seed` to create the first administrator. Admin login is `/admin`; only active users with the `admin` role can enter.
 
-For the mobile app, the base endpoint is `https://your-domain.example/api/v1`. API responses use:
+For the mobile app, the base endpoint is `https://nexpill.kodnextech.com/api/v1`. API responses use:
 
 ```json
 {"success": true, "message": "OK", "data": {}}

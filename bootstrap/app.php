@@ -14,6 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(SecurityHeaders::class);
+        $middleware->redirectTo(
+            guests: '/admin/login',
+            users: '/admin',
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

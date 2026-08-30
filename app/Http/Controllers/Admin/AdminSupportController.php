@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\SupportTicket;
-use App\Models\SupportMessage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,18 +29,18 @@ class AdminSupportController extends Controller
 
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
-                $q->where('email', 'like', '%' . $request->search . '%')
-                  ->orWhere('subject', 'like', '%' . $request->search . '%');
+                $q->where('email', 'like', '%'.$request->search.'%')
+                    ->orWhere('subject', 'like', '%'.$request->search.'%');
             });
         }
 
         $tickets = $query->paginate(20)->withQueryString();
 
         $counts = [
-            'open'        => SupportTicket::where('status', 'open')->count(),
+            'open' => SupportTicket::where('status', 'open')->count(),
             'in_progress' => SupportTicket::where('status', 'in_progress')->count(),
-            'resolved'    => SupportTicket::where('status', 'resolved')->count(),
-            'closed'      => SupportTicket::where('status', 'closed')->count(),
+            'resolved' => SupportTicket::where('status', 'resolved')->count(),
+            'closed' => SupportTicket::where('status', 'closed')->count(),
         ];
 
         return view('admin.support.index', compact('tickets', 'counts'));
@@ -49,7 +48,7 @@ class AdminSupportController extends Controller
 
     public function show(string $id): View
     {
-        $ticket   = SupportTicket::with('messages')->findOrFail($id);
+        $ticket = SupportTicket::with('messages')->findOrFail($id);
 
         return view('admin.support.show', compact('ticket'));
     }
@@ -61,8 +60,8 @@ class AdminSupportController extends Controller
         $request->validate(['message' => ['required', 'string', 'max:10000']]);
 
         $ticket->messages()->create([
-            'message'        => $request->message,
-            'sender_id'      => Auth::id(),
+            'message' => $request->message,
+            'sender_id' => Auth::id(),
             'is_staff_reply' => true,
         ]);
 
@@ -78,7 +77,7 @@ class AdminSupportController extends Controller
         $ticket = SupportTicket::findOrFail($id);
 
         $request->validate([
-            'status'   => ['sometimes', 'in:open,in_progress,resolved,closed'],
+            'status' => ['sometimes', 'in:open,in_progress,resolved,closed'],
             'priority' => ['sometimes', 'in:low,normal,high,urgent'],
         ]);
 

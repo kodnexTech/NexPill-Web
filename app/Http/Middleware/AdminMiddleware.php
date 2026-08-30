@@ -11,7 +11,7 @@ class AdminMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->user() || $request->user()->role !== UserRole::Admin) {
+        if (! $request->user() || ! $request->user()->is_active || $request->user()->role !== UserRole::Admin) {
             return redirect()->route('admin.login')
                 ->with('error', 'You do not have permission to access the admin panel.');
         }

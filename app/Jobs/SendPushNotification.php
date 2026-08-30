@@ -24,6 +24,11 @@ class SendPushNotification implements ShouldQueue
         if (! $notification || $notification->sent_at) {
             return;
         }
+        if ($notification->user->deviceTokens->isEmpty()) {
+            $notification->update(['sent_at' => now()]);
+
+            return;
+        }
         $fcm->send($notification);
         $notification->update(['sent_at' => now()]);
     }

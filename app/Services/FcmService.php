@@ -6,6 +6,7 @@ use App\Models\AppNotification;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class FcmService
 {
@@ -14,7 +15,7 @@ class FcmService
         $credentials = $this->credentials();
         $projectId = config('services.fcm.project_id') ?: ($credentials['project_id'] ?? null);
         if (! $credentials || ! $projectId) {
-            return 0;
+            throw new RuntimeException('FCM credentials are not configured.');
         }
 
         $accessToken = $this->accessToken($credentials);
@@ -33,7 +34,16 @@ class FcmService
             if ($response->successful()) {
                 $sent++;
             } else {
-                Log::warning('FCM delivery failed', ['device_id' => $device->device_id, 'status' => $response->status(), 'body' => $response->json()]);
+                $errorCode = $response->json('error.details.0.errorCode');
+                if ($errorCode === 'UNREGISTERED') {
+                    $device->delete();
+                }
+                Log::warning('FCM delivery failed', [
+                    'device_id' => $device->device_id,
+                    'status' => $response->status(),
+                    'error_code' => $errorCode,
+                    'message' => $response->json('error.message'),
+                ]);
             }
         }
 

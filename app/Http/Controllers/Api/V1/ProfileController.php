@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\DeviceToken;
+use App\Models\Medicine;
+use App\Models\SupportTicket;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class ProfileController extends ApiController
@@ -46,10 +49,14 @@ class ProfileController extends ApiController
             'device_id' => ['required', 'string', 'max:191'], 'token' => ['required', 'string', 'max:4096'],
             'platform' => ['required', 'in:android,ios,web'], 'app_version' => ['nullable', 'string', 'max:32'],
         ]);
-        $device = DeviceToken::updateOrCreate(
-            ['user_id' => $request->user()->id, 'device_id' => $data['device_id']],
-            [...$data, 'last_seen_at' => now()],
-        );
+        $device = DB::transaction(function () use ($request, $data): DeviceToken {
+            DeviceToken::where('token', $data['token'])->where('user_id', '!=', $request->user()->id)->delete();
+
+            return DeviceToken::updateOrCreate(
+                ['user_id' => $request->user()->id, 'device_id' => $data['device_id']],
+                [...$data, 'last_seen_at' => now()],
+            );
+        });
 
         return $this->ok($device, 'Device registered');
     }
@@ -76,11 +83,26 @@ class ProfileController extends ApiController
 
     public function destroy(Request $request): JsonResponse
     {
-        DB::transaction(function () use ($request): void {
-            $request->user()->tokens()->delete();
-            $request->user()->deviceTokens()->delete();
-            $request->user()->update(['is_active' => false, 'email' => 'deleted+'.$request->user()->id.'@nexpill.invalid', 'phone' => null]);
-            $request->user()->delete();
+        $user = $request->user();
+        $email = $user->email;
+        $prescriptions = Medicine::withTrashed()
+            ->where('user_id', $user->id)
+            ->whereNotNull('prescription_path')
+            ->pluck('prescription_path');
+
+        foreach ($prescriptions as $path) {
+            if (Storage::disk('local')->exists($path) && ! Storage::disk('local')->delete($path)) {
+                abort(500, 'Account files could not be removed. Please try again.');
+            }
+        }
+
+        DB::transaction(function () use ($user, $email): void {
+            SupportTicket::withTrashed()
+                ->where(fn ($query) => $query->where('user_id', $user->id)->orWhere('email', $email))
+                ->get()
+                ->each
+                ->forceDelete();
+            $user->forceDelete();
         });
 
         return $this->ok(null, 'Account deletion completed');

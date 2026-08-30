@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\PlanController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\SideEffectController;
 use App\Http\Controllers\Api\V1\SupportTicketController;
+use App\Http\Middleware\EnsureActiveUser;
 use App\Models\LegalDocument;
 use Illuminate\Support\Facades\Route;
 
@@ -27,7 +28,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/otp/verify', [AuthController::class, 'verifyOtp'])->middleware('throttle:10,1');
     });
 
-    Route::middleware(['auth:sanctum'])->group(function (): void {
+    Route::middleware(['auth:sanctum', EnsureActiveUser::class, 'throttle:120,1'])->group(function (): void {
         Route::post('/auth/refresh', [AuthController::class, 'refresh']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::post('/auth/logout-all', [AuthController::class, 'logoutAll']);

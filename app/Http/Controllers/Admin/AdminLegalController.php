@@ -25,9 +25,9 @@ class AdminLegalController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'type'    => ['required', 'in:privacy,terms'],
+            'type' => ['required', 'in:privacy,terms'],
             'version' => ['required', 'string', 'max:32'],
-            'title'   => ['required', 'string', 'max:255'],
+            'title' => ['required', 'string', 'max:255'],
             'content' => ['required', 'string'],
         ]);
 
@@ -44,7 +44,7 @@ class AdminLegalController extends Controller
     public function update(Request $request, LegalDocument $legal): RedirectResponse
     {
         $validated = $request->validate([
-            'title'   => ['required', 'string', 'max:255'],
+            'title' => ['required', 'string', 'max:255'],
             'content' => ['required', 'string'],
         ]);
 

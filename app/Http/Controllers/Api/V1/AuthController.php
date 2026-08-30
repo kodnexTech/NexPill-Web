@@ -133,15 +133,24 @@ class AuthController extends ApiController
         }
 
         $user = DB::transaction(function () use ($record, $email, $data): User {
-            $record->update(['consumed_at' => now()]);
-            $user = User::firstOrCreate(
-                ['email' => $email],
-                [
+            $lockedCode = OneTimeCode::whereKey($record->id)->lockForUpdate()->firstOrFail();
+            if ($lockedCode->consumed_at || $lockedCode->expires_at->isPast()) {
+                abort(422, 'The verification code has already been used or expired.');
+            }
+            $lockedCode->update(['consumed_at' => now()]);
+
+            if ($data['purpose'] === 'login') {
+                $user = User::where('email', $email)->first();
+                abort_unless($user, 404, 'No account found with this email.');
+            } else {
+                abort_if(User::where('email', $email)->exists(), 409, 'An account already exists with this email.');
+                $user = User::create([
+                    'email' => $email,
                     'name' => $data['name'] ?? Str::before($email, '@'), 'role' => UserRole::User,
                     'email_verified_at' => now(), 'timezone' => $data['timezone'] ?? 'UTC',
                     'notification_preferences' => $this->defaultPreferences(), 'is_active' => true,
-                ],
-            );
+                ]);
+            }
             $user->update(['email_verified_at' => $user->email_verified_at ?? now(), 'last_seen_at' => now()]);
 
             return $user;

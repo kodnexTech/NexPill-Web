@@ -14,7 +14,7 @@ class AdminMedicinesController extends Controller
         $query = Medicine::with('user')->withTrashed()->latest();
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $query->where('name', 'like', '%'.$request->search.'%');
         }
 
         if ($request->filled('form')) {

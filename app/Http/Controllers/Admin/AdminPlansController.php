@@ -25,13 +25,13 @@ class AdminPlansController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name'           => ['required', 'string', 'max:120'],
-            'slug'           => ['required', 'string', 'max:60', 'unique:plans,slug', 'alpha_dash'],
-            'price_minor'    => ['required', 'integer', 'min:0'],
-            'currency'       => ['required', 'string', 'size:3'],
+            'name' => ['required', 'string', 'max:120'],
+            'slug' => ['required', 'string', 'max:60', 'unique:plans,slug', 'alpha_dash'],
+            'price_minor' => ['required', 'integer', 'min:0'],
+            'currency' => ['required', 'string', 'size:3'],
             'billing_period' => ['required', 'in:month,year,lifetime'],
-            'features'       => ['nullable', 'string'],
-            'is_active'      => ['boolean'],
+            'features' => ['nullable', 'string'],
+            'is_active' => ['boolean'],
         ]);
 
         $validated['features'] = $request->features
@@ -52,13 +52,13 @@ class AdminPlansController extends Controller
     public function update(Request $request, Plan $plan): RedirectResponse
     {
         $validated = $request->validate([
-            'name'           => ['required', 'string', 'max:120'],
-            'slug'           => ['required', 'string', 'max:60', 'alpha_dash', 'unique:plans,slug,' . $plan->id],
-            'price_minor'    => ['required', 'integer', 'min:0'],
-            'currency'       => ['required', 'string', 'size:3'],
+            'name' => ['required', 'string', 'max:120'],
+            'slug' => ['required', 'string', 'max:60', 'alpha_dash', 'unique:plans,slug,'.$plan->id],
+            'price_minor' => ['required', 'integer', 'min:0'],
+            'currency' => ['required', 'string', 'size:3'],
             'billing_period' => ['required', 'in:month,year,lifetime'],
-            'features'       => ['nullable', 'string'],
-            'is_active'      => ['boolean'],
+            'features' => ['nullable', 'string'],
+            'is_active' => ['boolean'],
         ]);
 
         $validated['features'] = $request->features
