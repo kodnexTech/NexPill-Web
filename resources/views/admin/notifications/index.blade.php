@@ -62,7 +62,14 @@
                                 <span class="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-700">Unread</span>
                             @endif
                         </td>
-                        <td class="px-4 py-3 text-xs text-[#5B6D86]">{{ $notif->created_at->diffForHumans() }}</td>
+                        <td class="px-4 py-3 text-xs text-[#5B6D86]">
+                            @if($notif->sent_at)
+                                <span class="rounded-full bg-[#E7FFF8] px-2.5 py-1 text-[10px] font-bold text-[#008A6C]">Processed</span>
+                                <p class="mt-1">{{ $notif->sent_at->diffForHumans() }}</p>
+                            @else
+                                <span class="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-700">Queued</span>
+                            @endif
+                        </td>
                     </tr>
                 @empty
                     <tr><td colspan="5" class="px-6 py-12 text-center text-sm text-[#5B6D86]">No notifications found.</td></tr>

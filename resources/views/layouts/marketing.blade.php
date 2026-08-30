@@ -18,14 +18,14 @@
         <a href="{{ route('home') }}" class="brand" aria-label="NexPill home">
             <img class="brand-logo" src="/images/nexpill-logo-horizontal.png" alt="NexPill" width="172" height="54">
         </a>
-        <div class="hidden items-center gap-8 md:flex">
+        <div class="hidden items-center gap-8 lg:flex">
             <a class="nav-link" href="{{ route('home') }}#features">Features</a>
             <a class="nav-link" href="{{ route('home') }}#families">For families</a>
             <a class="nav-link" href="{{ route('privacy') }}">Privacy</a>
             <a class="nav-link" href="{{ route('support') }}">Support</a>
             <a class="button button-dark" href="{{ route('support') }}">Get early access</a>
         </div>
-        <details class="relative md:hidden">
+        <details class="relative lg:hidden">
             <summary class="menu-button" aria-label="Open navigation">Menu</summary>
             <div class="mobile-menu">
                 <a href="{{ route('home') }}#features">Features</a><a href="{{ route('home') }}#families">For families</a>

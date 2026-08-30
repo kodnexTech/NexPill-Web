@@ -46,6 +46,33 @@ class ProfileApiTest extends TestCase
         $this->assertDatabaseHas('device_tokens', ['user_id' => $newUser->id, 'token' => 'same-fcm-token']);
     }
 
+    public function test_notification_preferences_are_validated_and_persisted(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user, ['mobile']);
+
+        $this->putJson('/api/v1/profile/notification-preferences', [
+            'dose_reminders' => true,
+            'smart_snooze' => false,
+            'family_missed_alerts' => true,
+            'member_joined' => false,
+            'appointment_reminders' => true,
+            'low_stock' => true,
+        ])->assertOk()
+            ->assertJsonPath('data.dose_reminders', true)
+            ->assertJsonPath('data.smart_snooze', false)
+            ->assertJsonPath('data.low_stock', true);
+
+        $this->assertSame([
+            'dose_reminders' => true,
+            'smart_snooze' => false,
+            'family_missed_alerts' => true,
+            'member_joined' => false,
+            'appointment_reminders' => true,
+            'low_stock' => true,
+        ], $user->fresh()->notification_preferences);
+    }
+
     public function test_account_deletion_removes_health_data_support_data_and_files(): void
     {
         Storage::fake('local');

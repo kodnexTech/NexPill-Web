@@ -35,7 +35,7 @@ php artisan queue:work --queue=default --tries=3 --timeout=90
 php artisan schedule:work
 ```
 
-Or run `php artisan schedule:run` every minute from cron. Scheduled jobs materialize upcoming doses, send medication/appointment reminders, finalize missed doses and check low stock. FCM delivery uses Firebase HTTP v1 and `FIREBASE_SERVICE_ACCOUNT`.
+Or run `php artisan schedule:run` every minute from cron. Scheduled jobs materialize upcoming doses, send medication/appointment reminders, finalize missed doses and check low stock. FCM delivery uses Firebase HTTP v1. Set `FCM_PROJECT_ID=nexpill-app` and point `FCM_SERVICE_ACCOUNT_PATH` to a server-only Firebase service-account JSON file (for example, `storage/app/private/firebase-service-account.json`). Never commit that file or place it under `public/`.
 
 Production deploy checklist:
 

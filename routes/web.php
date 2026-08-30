@@ -66,7 +66,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('support/{id}/reply', [AdminSupportController::class, 'reply'])->name('support.reply');
         Route::patch('support/{id}/status', [AdminSupportController::class, 'updateStatus'])->name('support.status');
 
-        Route::resource('plans', AdminPlansController::class)->names([
+        Route::resource('plans', AdminPlansController::class)->except('show')->names([
             'index' => 'plans.index',
             'create' => 'plans.create',
             'store' => 'plans.store',

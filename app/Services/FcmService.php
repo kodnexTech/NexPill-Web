@@ -28,7 +28,10 @@ class FcmService
                     'notification' => ['title' => $notification->title, 'body' => $notification->message],
                     'data' => collect($notification->data ?? [])->map(fn ($value) => is_scalar($value) ? (string) $value : json_encode($value))->all(),
                     'android' => ['priority' => 'high'],
-                    'apns' => ['headers' => ['apns-priority' => '10'], 'payload' => ['aps' => ['sound' => 'default']]],
+                    'apns' => [
+                        'headers' => ['apns-priority' => '10', 'apns-push-type' => 'alert'],
+                        'payload' => ['aps' => ['sound' => 'default']],
+                    ],
                 ]],
             );
             if ($response->successful()) {
@@ -44,6 +47,9 @@ class FcmService
                     'error_code' => $errorCode,
                     'message' => $response->json('error.message'),
                 ]);
+                if ($response->status() === 429 || $response->serverError() || in_array($response->status(), [401, 403], true)) {
+                    throw new RuntimeException("FCM delivery failed with HTTP {$response->status()}.");
+                }
             }
         }
 
@@ -63,7 +69,17 @@ class FcmService
         }
         $decoded = json_decode($json, true);
 
-        return is_array($decoded) ? $decoded : null;
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        foreach (['client_email', 'private_key'] as $requiredKey) {
+            if (! isset($decoded[$requiredKey]) || ! is_string($decoded[$requiredKey]) || $decoded[$requiredKey] === '') {
+                throw new RuntimeException("FCM service account is missing {$requiredKey}.");
+            }
+        }
+
+        return $decoded;
     }
 
     /** @param array<string, mixed> $credentials */
@@ -77,12 +93,20 @@ class FcmService
                 'aud' => $credentials['token_uri'] ?? 'https://oauth2.googleapis.com/token', 'iat' => $now, 'exp' => $now + 3600,
             ]));
             $unsigned = $header.'.'.$claims;
-            openssl_sign($unsigned, $signature, $credentials['private_key'], OPENSSL_ALGO_SHA256);
+            if (! openssl_sign($unsigned, $signature, $credentials['private_key'], OPENSSL_ALGO_SHA256)) {
+                throw new RuntimeException('Unable to sign the FCM OAuth assertion.');
+            }
             $jwt = $unsigned.'.'.$this->base64Url($signature);
 
-            return Http::asForm()->timeout(15)->post($credentials['token_uri'] ?? 'https://oauth2.googleapis.com/token', [
+            $accessToken = Http::asForm()->timeout(15)->post($credentials['token_uri'] ?? 'https://oauth2.googleapis.com/token', [
                 'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer', 'assertion' => $jwt,
             ])->throw()->json('access_token');
+
+            if (! is_string($accessToken) || $accessToken === '') {
+                throw new RuntimeException('Firebase did not return an OAuth access token.');
+            }
+
+            return $accessToken;
         });
     }
 

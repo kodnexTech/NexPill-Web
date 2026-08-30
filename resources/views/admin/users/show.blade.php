@@ -55,6 +55,11 @@
         {{-- Quick Actions --}}
         <div class="rounded-2xl border border-[#DCE6F2] bg-white p-5 shadow-sm">
             <h3 class="mb-4 text-sm font-bold text-[#10233F]">Quick Actions</h3>
+            @if($user->id === auth()->id())
+                <div class="rounded-xl border border-[#B9D8FF] bg-[#F0F7FF] px-4 py-3 text-sm leading-relaxed text-[#335071]">
+                    Your current administrator account is protected here. Use another administrator account to change its role or status.
+                </div>
+            @else
             <form method="POST" action="{{ route('admin.users.update', $user->id) }}" class="space-y-3">
                 @csrf @method('PATCH')
 
@@ -95,6 +100,7 @@
                         Delete User
                     </button>
                 </form>
+            @endif
             @endif
         </div>
     </div>
