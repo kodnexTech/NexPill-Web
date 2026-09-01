@@ -8,6 +8,11 @@ return [
         'service_account_path' => env('FCM_SERVICE_ACCOUNT_PATH'),
     ],
 
+    'otp' => [
+        'ttl_minutes' => (int) env('OTP_TTL_MINUTES', 10),
+        'max_attempts' => (int) env('OTP_MAX_ATTEMPTS', 5),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

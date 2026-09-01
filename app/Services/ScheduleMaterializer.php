@@ -13,6 +13,10 @@ class ScheduleMaterializer
     {
         $schedule->loadMissing('medicine.user');
 
+        if ($schedule->medicine->is_paused === true && $schedule->medicine->paused_until?->endOfDay()->isPast()) {
+            $schedule->medicine->update(['is_paused' => false, 'paused_until' => null]);
+        }
+
         if ($schedule->is_active === false || $schedule->as_needed === true || $schedule->medicine->is_paused === true) {
             return 0;
         }

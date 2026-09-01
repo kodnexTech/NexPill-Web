@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class MedicineController extends ApiController
@@ -90,6 +91,39 @@ class MedicineController extends ApiController
         return $this->ok(null, 'Medicine deleted');
     }
 
+    public function pause(Request $request, string $medicine): JsonResponse
+    {
+        $data = $request->validate(['pause_until' => ['nullable', 'date', 'after_or_equal:today']]);
+        $model = $this->owned($request, $medicine);
+
+        DB::transaction(function () use ($model, $data): void {
+            $model->update([
+                'is_paused' => true,
+                'paused_until' => $data['pause_until'] ?? null,
+            ]);
+            $model->doseLogs()
+                ->where('scheduled_for', '>=', now())
+                ->whereNotIn('status', [DoseStatus::Taken, DoseStatus::Skipped, DoseStatus::Missed])
+                ->delete();
+        });
+
+        return $this->ok($model->fresh()->load(['schedules', 'dependent']), 'Medicine paused');
+    }
+
+    public function resume(Request $request, string $medicine): JsonResponse
+    {
+        $model = $this->owned($request, $medicine);
+
+        DB::transaction(function () use ($model): void {
+            $model->update(['is_paused' => false, 'paused_until' => null]);
+            foreach ($model->schedules()->where('is_active', true)->get() as $schedule) {
+                $this->materializer->materialize($schedule, CarbonImmutable::now(), CarbonImmutable::now()->addDays(30));
+            }
+        });
+
+        return $this->ok($model->fresh()->load(['schedules', 'dependent']), 'Medicine resumed');
+    }
+
     public function refill(Request $request, string $medicine): JsonResponse
     {
         $data = $request->validate([
@@ -149,16 +183,19 @@ class MedicineController extends ApiController
         return $request->validate([
             'name' => [$required, 'string', 'max:191'], 'dependent_id' => ['nullable', 'uuid'],
             'strength' => ['nullable', 'numeric', 'min:0.001'], 'unit' => ['nullable', 'string', 'max:32'],
-            'form' => [$required, 'in:tablet,capsule,liquid,injection,drops,inhaler,cream,other'],
+            'form' => [$required, 'in:tablet,capsule,liquid,injection,drops,inhaler,cream,powder,other'],
             'color' => ['nullable', 'string', 'max:32'], 'instructions' => ['nullable', 'string', 'max:3000'],
-            'notes' => ['nullable', 'string', 'max:3000'],
+            'notes' => ['nullable', 'string', 'max:3000'], 'doctor_notes' => ['nullable', 'string', 'max:3000'],
+            'dose_amount' => ['nullable', 'numeric', 'min:0.001'], 'dose_unit' => ['nullable', 'string', 'max:32'],
+            'food_instruction' => ['nullable', 'in:before,with,after,none'],
             'inventory_total' => ['nullable', 'integer', 'min:0'], 'inventory_remaining' => ['nullable', 'integer', 'min:0'],
             'refill_threshold' => ['nullable', 'integer', 'min:0'], 'reminder_enabled' => ['sometimes', 'boolean'],
             'is_paused' => ['sometimes', 'boolean'], 'paused_until' => ['nullable', 'date'],
             'schedule' => [$required, 'array'], 'schedule.type' => [$required, 'in:daily,specific_days,interval,as_needed'],
-            'schedule.timezone' => [$required, 'timezone'], 'schedule.times' => ['required_unless:schedule.type,as_needed', 'array', 'min:1', 'max:24'],
-            'schedule.times.*' => ['date_format:H:i'], 'schedule.weekdays' => ['required_if:schedule.type,specific_days', 'array'],
-            'schedule.weekdays.*' => ['integer', 'between:1,7'], 'schedule.interval_days' => ['required_if:schedule.type,interval', 'integer', 'min:1', 'max:365'],
+            'schedule.timezone' => [$required, 'timezone'],
+            'schedule.times' => [Rule::requiredIf(fn () => $request->has('schedule') && $request->input('schedule.type') !== 'as_needed'), 'array', 'min:1', 'max:24'],
+            'schedule.times.*' => ['date_format:H:i', 'distinct'], 'schedule.weekdays' => ['required_if:schedule.type,specific_days', 'array', 'min:1'],
+            'schedule.weekdays.*' => ['integer', 'between:1,7', 'distinct'], 'schedule.interval_days' => ['required_if:schedule.type,interval', 'integer', 'min:1', 'max:365'],
             'schedule.interval_hours' => ['nullable', 'integer', 'min:1', 'max:168'], 'schedule.starts_on' => [$required, 'date'],
             'schedule.ends_on' => ['nullable', 'date', 'after_or_equal:schedule.starts_on'], 'schedule.as_needed' => ['sometimes', 'boolean'],
             'schedule.is_active' => ['sometimes', 'boolean'],

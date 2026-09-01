@@ -18,6 +18,7 @@ class ProcessMedicationReminders extends Command
     {
         $processed = 0;
         DoseLog::whereIn('status', [DoseStatus::Scheduled, DoseStatus::Due, DoseStatus::Overdue, DoseStatus::Snoozed])
+            ->whereHas('medicine', fn ($query) => $query->where('is_paused', false)->where('reminder_enabled', true))
             ->where(fn ($q) => $q->where('scheduled_for', '<=', now()->addMinutes(5))->orWhere('snoozed_until', '<=', now()))
             ->with(['medicine', 'user'])->cursor()->each(function (DoseLog $log) use ($notifications, &$processed): void {
                 $prefs = $log->user->notification_preferences ?? [];

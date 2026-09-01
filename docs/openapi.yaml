@@ -83,6 +83,17 @@ paths:
     get:
       security: [{ sanctum: [] }]
       operationId: dashboard
+      parameters:
+        - { name: dependent_id, in: query, schema: { type: string, format: uuid, nullable: true }, description: Pass an empty value for the account owner's medicines. }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /history:
+    get:
+      security: [{ sanctum: [] }]
+      operationId: monthlyHistory
+      parameters:
+        - { name: year, in: query, required: true, schema: { type: integer, minimum: 2000, maximum: 2100 } }
+        - { name: month, in: query, required: true, schema: { type: integer, minimum: 1, maximum: 12 } }
       responses:
         '200': { $ref: '#/components/responses/Success' }
   /medicines:
@@ -145,6 +156,18 @@ paths:
                 pharmacy: { type: string }
                 notes: { type: string }
       responses: { '201': { $ref: '#/components/responses/Success' } }
+  /medicines/{medicine}/pause:
+    post:
+      tags: [Medicines]
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/MedicineId' }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /medicines/{medicine}/resume:
+    post:
+      tags: [Medicines]
+      security: [{ sanctum: [] }]
+      parameters: [{ $ref: '#/components/parameters/MedicineId' }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
   /medicines/{medicine}/prescription:
     post:
       tags: [Medicines]
@@ -314,9 +337,13 @@ components:
       required: [name, form, schedule]
       properties:
         name: { type: string }
-        form: { type: string, enum: [tablet, capsule, liquid, injection, drops, inhaler, cream, other] }
+        form: { type: string, enum: [tablet, capsule, liquid, injection, drops, inhaler, cream, powder, other] }
         strength: { type: number, exclusiveMinimum: 0 }
         unit: { type: string, example: mg }
+        dose_amount: { type: number, exclusiveMinimum: 0 }
+        dose_unit: { type: string, example: tablet }
+        food_instruction: { type: string, enum: [before, with, after, none] }
+        doctor_notes: { type: string }
         instructions: { type: string }
         inventory_total: { type: integer, minimum: 0 }
         refill_threshold: { type: integer, minimum: 0 }
@@ -335,7 +362,7 @@ components:
       type: object
       required: [action, client_request_id]
       properties:
-        action: { type: string, enum: [taken, skipped, snoozed] }
+        action: { type: string, enum: [taken, skipped, snoozed, undo_taken] }
         client_request_id: { type: string, format: uuid, description: Makes retries idempotent }
         snooze_minutes: { type: integer, minimum: 5, maximum: 240 }
         symptoms: { type: array, items: { type: string } }

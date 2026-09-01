@@ -10,11 +10,22 @@ use Carbon\CarbonInterface;
 class AdherenceCalculator
 {
     /** @return array<string, int|float> */
-    public function forRange(User $user, CarbonInterface $from, CarbonInterface $to): array
-    {
-        $counts = DoseLog::query()
+    public function forRange(
+        User $user,
+        CarbonInterface $from,
+        CarbonInterface $to,
+        ?string $dependentId = null,
+        bool $filterByDependent = false,
+    ): array {
+        $query = DoseLog::query()
             ->where('user_id', $user->id)
-            ->whereBetween('scheduled_for', [$from, $to])
+            ->whereBetween('scheduled_for', [$from, $to]);
+        if ($filterByDependent) {
+            $query->whereHas('medicine', fn ($medicineQuery) => $dependentId
+                ? $medicineQuery->where('dependent_id', $dependentId)
+                : $medicineQuery->whereNull('dependent_id'));
+        }
+        $counts = $query
             ->selectRaw('status, COUNT(*) as aggregate')
             ->groupBy('status')
             ->pluck('aggregate', 'status');

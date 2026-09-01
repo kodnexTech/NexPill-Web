@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\DoseLog;
 use App\Models\Medicine;
 use App\Models\SideEffectLog;
 use Illuminate\Http\JsonResponse;
@@ -24,6 +25,9 @@ class SideEffectController extends ApiController
         ]);
         if (! empty($data['medicine_id']) && ! Medicine::where('user_id', $request->user()->id)->whereKey($data['medicine_id'])->exists()) {
             abort(422, 'Invalid medicine.');
+        }
+        if (! empty($data['dose_log_id']) && ! DoseLog::where('user_id', $request->user()->id)->whereKey($data['dose_log_id'])->exists()) {
+            abort(422, 'Invalid dose log.');
         }
         $data['user_id'] = $request->user()->id;
 

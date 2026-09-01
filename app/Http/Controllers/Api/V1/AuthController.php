@@ -93,14 +93,14 @@ class AuthController extends ApiController
         OneTimeCode::create([
             'email' => $email, 'purpose' => $data['purpose'],
             'code_hash' => $this->hashCode($code),
-            'expires_at' => now()->addMinutes((int) env('OTP_TTL_MINUTES', 10)),
+            'expires_at' => now()->addMinutes((int) config('services.otp.ttl_minutes', 10)),
         ]);
 
         Mail::raw("Your NexPill verification code is {$code}. It expires shortly.", function ($message) use ($email): void {
             $message->to($email)->subject('Your NexPill verification code');
         });
 
-        $response = ['expires_in_seconds' => (int) env('OTP_TTL_MINUTES', 10) * 60];
+        $response = ['expires_in_seconds' => (int) config('services.otp.ttl_minutes', 10) * 60];
         if (app()->isLocal() || app()->runningUnitTests()) {
             $response['debug_code'] = $code;
         }
@@ -123,7 +123,7 @@ class AuthController extends ApiController
         if (! $record || $record->expires_at->isPast()) {
             return $this->fail('The verification code has expired.', 422);
         }
-        if ($record->attempts >= (int) env('OTP_MAX_ATTEMPTS', 5)) {
+        if ($record->attempts >= (int) config('services.otp.max_attempts', 5)) {
             return $this->fail('Too many attempts. Request a new code.', 429);
         }
         if (! hash_equals($record->code_hash, $this->hashCode($data['code']))) {
@@ -204,7 +204,7 @@ class AuthController extends ApiController
     private function defaultPreferences(): array
     {
         return [
-            'dose_reminders' => true, 'smart_snooze' => true, 'family_missed_alerts' => true,
+            'dose_reminders' => true, 'smart_snooze' => true, 'family_missed_alerts' => false,
             'member_joined' => true, 'appointment_reminders' => true, 'low_stock' => true,
         ];
     }

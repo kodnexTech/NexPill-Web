@@ -56,7 +56,6 @@
             <a href="{{ route('home') }}#features">Features</a>
             <a href="{{ route('home') }}#families">For families</a>
             <a href="{{ route('support') }}">Support</a>
-            <a href="{{ route('admin.dashboard') }}">Admin Portal</a>
         </div>
         <div>
             <p class="footer-title">Legal & Policy</p>

@@ -35,7 +35,10 @@ Route::prefix('v1')->group(function (): void {
 
         Route::get('/dashboard', DashboardController::class);
         Route::get('/adherence', [DashboardController::class, 'adherence']);
+        Route::get('/history', [DashboardController::class, 'history']);
         Route::apiResource('medicines', MedicineController::class);
+        Route::post('/medicines/{medicine}/pause', [MedicineController::class, 'pause']);
+        Route::post('/medicines/{medicine}/resume', [MedicineController::class, 'resume']);
         Route::post('/medicines/{medicine}/prescription', [MedicineController::class, 'uploadPrescription']);
         Route::get('/medicines/{medicine}/prescription', [MedicineController::class, 'downloadPrescription']);
         Route::post('/medicines/{medicine}/refills', [MedicineController::class, 'refill']);

@@ -49,11 +49,11 @@ class DoseLogController extends ApiController
     public function action(Request $request, string $doseLog): JsonResponse
     {
         $data = $request->validate([
-            'action' => ['required', 'in:taken,skipped,snoozed'], 'client_request_id' => ['required', 'uuid'],
+            'action' => ['required', 'in:taken,skipped,snoozed,undo_taken'], 'client_request_id' => ['required', 'uuid'],
             'taken_at' => ['nullable', 'date'], 'snooze_minutes' => ['required_if:action,snoozed', 'integer', 'between:5,240'],
             'dose_taken' => ['nullable', 'numeric', 'min:0.001'], 'symptoms' => ['nullable', 'array'],
             'symptoms.*' => ['string', 'max:120'], 'severity' => ['nullable', 'in:mild,moderate,severe'],
-            'notes' => ['nullable', 'string', 'max:3000'],
+            'notes' => ['nullable', 'string', 'max:3000'], 'reason' => ['nullable', 'string', 'max:300'],
         ]);
 
         $existing = DoseLog::where('user_id', $request->user()->id)->where('client_request_id', $data['client_request_id'])->first();
@@ -63,15 +63,46 @@ class DoseLogController extends ApiController
 
         $log = DB::transaction(function () use ($request, $doseLog, $data): DoseLog {
             $log = DoseLog::where('user_id', $request->user()->id)->lockForUpdate()->findOrFail($doseLog);
+            if ($log->client_request_id === $data['client_request_id']) {
+                return $log;
+            }
+
+            if ($data['action'] === 'undo_taken') {
+                if ($log->status !== DoseStatus::Taken) {
+                    abort(409, 'Only a taken dose can be undone.');
+                }
+
+                $medicine = Medicine::lockForUpdate()->findOrFail($log->medicine_id);
+                if ($medicine->inventory_remaining !== null) {
+                    $inventoryUnits = max(1, (int) ceil((float) ($log->dose_taken ?? $medicine->dose_amount ?? 1)));
+                    $medicine->update(['inventory_remaining' => $medicine->inventory_remaining + $inventoryUnits]);
+                }
+                SideEffectLog::where('dose_log_id', $log->id)->where('user_id', $request->user()->id)->delete();
+                $log->update([
+                    'status' => $log->scheduled_for->isPast() ? DoseStatus::Due : DoseStatus::Scheduled,
+                    'taken_at' => null,
+                    'client_request_id' => $data['client_request_id'],
+                ]);
+
+                return $log;
+            }
+
             if ($log->status->isFinal()) {
                 abort(409, 'This dose is already finalized.');
             }
             $previousStatus = $log->status;
 
+            $medicine = null;
+            $doseTaken = $data['dose_taken'] ?? $log->dose_taken;
+            if ($data['action'] === 'taken') {
+                $medicine = Medicine::lockForUpdate()->findOrFail($log->medicine_id);
+                $doseTaken ??= $medicine->dose_amount ?? 1;
+            }
+
             $attributes = [
                 'status' => DoseStatus::from($data['action']), 'client_request_id' => $data['client_request_id'],
-                'notes' => $data['notes'] ?? $log->notes, 'symptoms' => $data['symptoms'] ?? $log->symptoms,
-                'severity' => $data['severity'] ?? $log->severity, 'dose_taken' => $data['dose_taken'] ?? $log->dose_taken,
+                'notes' => $data['notes'] ?? $data['reason'] ?? $log->notes, 'symptoms' => $data['symptoms'] ?? $log->symptoms,
+                'severity' => $data['severity'] ?? $log->severity, 'dose_taken' => $doseTaken,
             ];
             if ($data['action'] === 'taken') {
                 $attributes['taken_at'] = $data['taken_at'] ?? now();
@@ -83,9 +114,9 @@ class DoseLogController extends ApiController
             $log->update($attributes);
 
             if ($data['action'] === 'taken' && $previousStatus !== DoseStatus::Taken) {
-                $medicine = Medicine::lockForUpdate()->findOrFail($log->medicine_id);
                 if ($medicine->inventory_remaining !== null) {
-                    $medicine->update(['inventory_remaining' => max(0, $medicine->inventory_remaining - 1)]);
+                    $inventoryUnits = max(1, (int) ceil((float) $doseTaken));
+                    $medicine->update(['inventory_remaining' => max(0, $medicine->inventory_remaining - $inventoryUnits)]);
                 }
             }
             if (! empty($data['symptoms'])) {

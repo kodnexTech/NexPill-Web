@@ -10,6 +10,7 @@ use App\Models\Medicine;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 
 class FamilyController extends ApiController
@@ -63,11 +64,12 @@ class FamilyController extends ApiController
         DB::transaction(function () use ($connection, $request): void {
             $connection->update(['member_id' => $request->user()->id, 'status' => 'accepted', 'accepted_at' => now(), 'invitation_code_hash' => null]);
             foreach ([$connection->owner_id, $request->user()->id] as $recipientId) {
-                AppNotification::create([
+                $notification = AppNotification::create([
                     'user_id' => $recipientId, 'type' => NotificationType::FamilyInvite,
                     'title' => 'Family circle updated', 'message' => $request->user()->name.' joined the family circle.',
                     'data' => ['family_connection_id' => $connection->id],
                 ]);
+                SendPushNotification::dispatch($notification->id)->afterCommit();
             }
         });
 
@@ -96,6 +98,12 @@ class FamilyController extends ApiController
         $recipientId = $request->user()->id === $model->owner_id ? $model->member_id : $model->owner_id;
         if (! $recipientId) {
             return $this->fail('A managed dependent cannot receive push notifications.');
+        }
+        $rateLimitKey = 'family-nudge:'.$model->id.':'.$request->user()->id;
+        if (! RateLimiter::attempt($rateLimitKey, 1, fn () => true, 900)) {
+            return $this->fail('Please wait before sending another nudge.', 429, [
+                'retry_after_seconds' => RateLimiter::availableIn($rateLimitKey),
+            ]);
         }
         $notification = AppNotification::create([
             'user_id' => $recipientId, 'type' => NotificationType::Nudge, 'title' => 'A friendly NexPill nudge',
